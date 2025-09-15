@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.3);
+        }
+        
+        .page {
+            display: none;
+            padding: 20px;
+            min-height: 100vh;
+            animation: slideIn 0.4s ease-in-out;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                transform: translateX(100%); 
+                opacity: 0;
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1;
+            }
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 20px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.4em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .room-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .room-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .room-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .room-card:hover::before {
+            opacity: 1;
+        }
+        
+        .room-icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .room-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .appliance-list {
+            margin-top: 20px;
+        }
+        
+        .appliance-item {
+            background: white;
+            padding: 25px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border: 2px solid transparent;
+        }
+        
+        .appliance-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .appliance-icon {
+            font-size: 2.5em;
+        }
+        
+        .appliance-info {
+            flex: 1;
+        }
+        
+        .appliance-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .appliance-status {
+            color: #666;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            font-size: 1.3em;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .auth-toggle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .auth-toggle a:hover {
+            color: #764ba2;
+        }
+        
+        .status-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .status-on {
+            background: #28a745;
+        }
+        
+        .status-off {
+            background: #dc3545;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 15px;
+            right: 25px;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 0.85em;
+            font-weight: 600;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .connected {
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+        }
+        
+        .disconnected {
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-msg {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+            color: #721c24;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 2px solid #f5c6cb;
+            font-weight: 500;
+        }
+        
+        .success-msg {
+            background: linear-gradient(135deg, #d4edda 0%, #a3cfbb 100%);
+            color: #155724;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 2px solid #c3e6cb;
+            font-weight: 500;
+        }
+        
+        .user-info {
+            position: fixed;
+            top: 65px;
+            right: 25px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #333;
+            z-index: 100;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .control-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .control-btn {
+            padding: 20px 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #495057;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .control-btn.on {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .control-btn.off {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .control-icon {
+            font-size: 1.8em;
+        }
+        
+        .status-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #2196f3;
+        }
+        
+        .status-display h3 {
+            color: #1565c0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(33, 150, 243, 0.2);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .recent-activity {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .recent-activity h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        .activity-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .activity-time {
+            font-size: 0.8em;
+            color: #999;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .room-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .appliance-item {
+                padding: 20px;
+            }
+            
+            .control-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="connection-status disconnected" id="connectionStatus">
+            Disconnected
+        </div>
+        
+        <div class="user-info" id="userInfo" style="display: none;">
+            <div id="userName"></div>
+        </div>
+        
+        <!-- Login/Signup Page -->
+        <div class="page active" id="authPage">
+            <div class="header">
+                <h1>🏠 Smart Home</h1>
+                <p>Home Automation Control Panel</p>
+            </div>
+            
+            <div id="authMessages"></div>
+            
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address:</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                
+                <button class="btn" onclick="handleLogin()" id="loginBtn">
+                    🔑 Login
+                </button>
+                
+                <div class="auth-toggle">
+                    <a href="#" onclick="toggleAuth()">Don't have an account? Sign Up</a>
+                </div>
+            </div>
+            
+            <div id="signupForm" style="display: none;">
+                <div class="form-group">
+                    <label for="signupName">Full Name:</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signupEmail">Email Address:</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="signupPassword">Create Password:</label>
+                    <input type="password" id="signupPassword" placeholder="Create a secure password" required>
+                </div>
+                
+                <button class="btn" onclick="handleSignup()" id="signupBtn">
+                    ✅ Create Account
+                </button>
+                
+                <div class="auth-toggle">
+                    <a href="#" onclick="toggleAuth()">Already have an account? Login</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rooms Page -->
+        <div class="page" id="roomsPage">
+            <button class="back-btn" onclick="logout()" title="Logout">←</button>
+            
+            <div class="header">
+                <h1>🏠 Select Room</h1>
+                <p>Choose a room to control appliances</p>
+            </div>
+            
+            <div class="room-grid">
+                <div class="room-card" onclick="selectRoom('living_room')">
+                    <div class="room-icon">🛋️</div>
+                    <div class="room-name">Living Room</div>
+                </div>
+                
+                <div class="room-card" onclick="selectRoom('bedroom')">
+                    <div class="room-icon">🛏️</div>
+                    <div class="room-name">Bedroom</div>
+                </div>
+                
+                <div class="room-card" onclick="selectRoom('kitchen')">
+                    <div class="room-icon">🍳</div>
+                    <div class="room-name">Kitchen</div>
+                </div>
+                
+                <div class="room-card" onclick="selectRoom('bathroom')">
+                    <div class="room-icon">🚿</div>
+                    <div class="room-name">Bathroom</div>
+                </div>
+            </div>
+            
+            <div class="control-grid">
+                <div class="control-btn" onclick="sendRoomCommand('ON')">
+                    <div class="control-icon">🔛</div>
+                    <div>Room ON</div>
+                </div>
+                <div class="control-btn" onclick="sendRoomCommand('OFF')">
+                    <div class="control-icon">⏹️</div>
+                    <div>Room OFF</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Control Page -->
+        <div class="page" id="controlPage">
+            <button class="back-btn" onclick="goBackToAppliances()" title="Back to Appliances">←</button>
+            
+            <div class="header">
+                <h1 id="applianceTitle">Device Control</h1>
+                <p>Manual control panel</p>
+            </div>
+            
+            <div class="control-panel">
+                <h3>Device Controls</h3>
+                <div class="control-grid">
+                    <div class="control-btn" onclick="sendDirectCommand('R1ON')" id="light-on">
+                        <div class="control-icon">💡</div>
+                        <div>Light ON</div>
+                    </div>
+                    <div class="control-btn" onclick="sendDirectCommand('R1OFF')" id="light-off">
+                        <div class="control-icon">💡</div>
+                        <div>Light OFF</div>
+                    </div>
+                    <div class="control-btn" onclick="sendDirectCommand('R2ON')" id="fan-on">
+                        <div class="control-icon">🌪️</div>
+                        <div>Fan ON</div>
+                    </div>
+                    <div class="control-btn" onclick="sendDirectCommand('R2OFF')" id="fan-off">
+                        <div class="control-icon">🌪️</div>
+                        <div>Fan OFF</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="getSystemStatus()" style="margin-top: 20px;">
+                    📊 Get System Status
+                </button>
+            </div>
+            
+            <div class="status-display" id="statusDisplay" style="display: none;">
+                <h3>System Status</h3>
+                <div id="statusContent">
+                    <!-- Status will be displayed here -->
+                </div>
+            </div>
+            
+            <div class="recent-activity">
+                <h3>Recent Commands</h3>
+                <div id="recentCommands">
+                    <div class="activity-item">
+                        <span>💡 Light turned ON</span>
+                        <span class="activity-time">2 mins ago</span>
+                    </div>
+                    <div class="activity-item">
+                        <span>🌪️ Fan turned OFF</span>
+                        <span class="activity-time">5 mins ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentRoom = '';
+        let currentAppliance = '';
+        let wsConnection = null;
+        let sessionToken = null;
+        let isAuthenticated = false;
+        
+        // Server configuration
+        const SERVER_CONFIG = {
+            API_BASE: window.location.origin
+        };
+        
+        // Appliances data for each room
+        const appliances = {
+            living_room: [
+                { id: 'living_lights', name: 'Main Lights', icon: '💡', status: 'OFF', command: 'R1' },
+                { id: 'living_fan', name: 'Ceiling Fan', icon: '🌪️', status: 'OFF', command: 'R2' },
+                { id: 'living_ac', name: 'Air Conditioner', icon: '❄️', status: 'OFF', command: 'R2' },
+                { id: 'living_tv', name: 'Television', icon: '📺', status: 'OFF', command: 'R1' }
+            ],
+            bedroom: [
+                { id: 'bed_lights', name: 'Bedroom Lights', icon: '💡', status: 'OFF', command: 'R1' },
+                { id: 'bed_fan', name: 'Ceiling Fan', icon: '🌪️', status: 'OFF', command: 'R2' },
+                { id: 'bed_ac', name: 'AC Unit', icon: '❄️', status: 'OFF', command: 'R2' },
+                { id: 'bed_lamp', name: 'Table Lamp', icon: '🔅', status: 'OFF', command: 'R1' }
+            ],
+            kitchen: [
+                { id: 'kitchen_lights', name: 'Kitchen Lights', icon: '💡', status: 'OFF', command: 'R1' },
+                { id: 'kitchen_exhaust', name: 'Exhaust Fan', icon: '🌪️', status: 'OFF', command: 'R2' },
+                { id: 'kitchen_microwave', name: 'Microwave', icon: '🔄', status: 'OFF', command: 'R1' },
+                { id: 'kitchen_fridge', name: 'Refrigerator', icon: '🧊', status: 'ON', command: 'R1' }
+            ],
+            bathroom: [
+                { id: 'bath_lights', name: 'Bathroom Lights', icon: '💡', status: 'OFF', command: 'R1' },
+                { id: 'bath_exhaust', name: 'Exhaust Fan', icon: '🌪️', status: 'OFF', command: 'R2' },
+                { id: 'bath_heater', name: 'Water Heater', icon: '🔥', status: 'OFF', command: 'R2' }
+            ]
+        };
+        
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            try {
+                wsConnection = new WebSocket(SERVER_CONFIG.WS_URL);
+                
+                wsConnection.onopen = function(event) {
+                    updateConnectionStatus(true);
+                    console.log('Connected to server');
+                    
+                    // Authenticate with server if we have a session token
+                    if (sessionToken && isAuthenticated) {
+                        wsConnection.send(JSON.stringify({
+                            type: 'authenticate',
+                            sessionToken: sessionToken
+                        }));
+                    }
+                };
+                
+                wsConnection.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    console.log('Message from server:', data);
+                    handleServerMessage(data);
+                };
+                
+                wsConnection.onclose = function(event) {
+                    updateConnectionStatus(false);
+                    console.log('Disconnected from server');
+                    // Try to reconnect after 5 seconds
+                    setTimeout(initWebSocket, 5000);
+                };
+                
+                wsConnection.onerror = function(error) {
+                    updateConnectionStatus(false);
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                updateConnectionStatus(false);
+                console.error('Failed to connect to server:', error);
+                // Try to reconnect after 5 seconds
+                setTimeout(initWebSocket, 5000);
+            }
+        }
+        
+        // Handle server messages
+        function handleServerMessage(data) {
+            switch (data.type) {
+                case 'auth_success':
+                    currentUser = data.user;
+                    isAuthenticated = true;
+                    updateUserInfo();
+                    showPage('roomsPage');
+                    showMessage('Welcome! Authentication successful!', 'success');
+                    break;
+                    
+                case 'auth_failed':
+                    showMessage(data.message || 'Authentication failed', 'error');
+                    break;
+                    
+                case 'command_sent':
+                    showMessage(data.message, 'success');
+                    if (data.arduino_response) {
+                        updateStatus(data.arduino_response);
+                    }
+                    addRecentCommand(data.message);
+                    break;
+                    
+                case 'status_response':
+                    displaySystemStatus(data.status);
+                    break;
+                    
+                case 'device_update':
+                    updateDeviceStatus(data);
+                    break;
+                    
+                case 'error':
+                    showMessage(data.message || 'An error occurred', 'error');
+                    break;
+                    
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+        
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.textContent = 'Connected';
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.textContent = 'Disconnected';
+            }
+        }
+        
+        // Update user info display
+        function updateUserInfo() {
+            const userInfoEl = document.getElementById('userInfo');
+            const userNameEl = document.getElementById('userName');
+            
+            if (currentUser) {
+                userNameEl.textContent = currentUser.name || currentUser.email;
+                userInfoEl.style.display = 'block';
+            } else {
+                userInfoEl.style.display = 'none';
+            }
+        }
+        
+        // Show message to user
+        function showMessage(message, type = 'info') {
+            const messagesEl = document.getElementById('authMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-msg' : 'success-msg';
+            messageDiv.textContent = message;
+            
+            messagesEl.innerHTML = '';
+            messagesEl.appendChild(messageDiv);
+            
+            // Auto-remove message after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+        
+        // Authentication functions
+        function toggleAuth() {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            // Clear messages and reset forms
+            document.getElementById('authMessages').innerHTML = '';
+            clearForms();
+            
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+            }
+        }
+        
+        function clearForms() {
+            // Clear all form inputs
+            document.querySelectorAll('input').forEach(input => input.value = '');
+        }
+        
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (!email.includes('@')) {
+                showMessage('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = 'Logging in... <div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    sessionToken = data.sessionToken;
+                    currentUser = data.user;
+                    isAuthenticated = true;
+                    updateConnectionStatus(true);
+                    updateUserInfo();
+                    showMessage('Login successful!', 'success');
+                    showPage('roomsPage');
+                } else {
+                    showMessage(data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '🔑 Login';
+        }
+        
+        async function handleSignup() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const signupBtn = document.getElementById('signupBtn');
+            
+            if (!name || !email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (!email.includes('@')) {
+                showMessage('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = 'Creating Account... <div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Registration successful! Please login with your credentials.', 'success');
+                    setTimeout(() => toggleAuth(), 2000);
+                } else {
+                    showMessage(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+            
+            signupBtn.disabled = false;
+            signupBtn.innerHTML = 'Create Account';
+        }
+        
+        // Navigation functions
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        function selectRoom(roomId) {
+            currentRoom = roomId;
+            const roomTitle = roomId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            document.getElementById('roomTitle').textContent = roomTitle;
+            loadAppliances(roomId);
+            showPage('appliancesPage');
+        }
+        
+        function loadAppliances(roomId) {
+            const applianceList = document.getElementById('applianceList');
+            applianceList.innerHTML = '';
+            
+            if (!appliances[roomId]) {
+                applianceList.innerHTML = '<p>No appliances found for this room.</p>';
+                return;
+            }
+            
+            appliances[roomId].forEach(appliance => {
+                const applianceEl = document.createElement('div');
+                applianceEl.className = 'appliance-item';
+                applianceEl.onclick = () => selectAppliance(appliance);
+                
+                applianceEl.innerHTML = `
+                    <div class="appliance-icon">${appliance.icon}</div>
+                    <div class="appliance-info">
+                        <div class="appliance-name">${appliance.name}</div>
+                        <div class="appliance-status">
+                            Status: ${appliance.status} 
+                            <span class="status-indicator ${appliance.status.toLowerCase() === 'on' ? 'status-on' : 'status-off'}"></span>
+                        </div>
+                    </div>
+                `;
+                
+                applianceList.appendChild(applianceEl);
+            });
+        }
+        
+        function selectAppliance(appliance) {
+            currentAppliance = appliance;
+            document.getElementById('applianceTitle').textContent = appliance.name + ' Control';
+            showPage('controlPage');
+        }
+        
+        function goToRooms() {
+            showPage('roomsPage');
+        }
+        
+        function goBackToAppliances() {
+            showPage('appliancesPage');
+        }
+        
+        function logout() {
+            // Clear all user data
+            currentUser = null;
+            currentRoom = '';
+            currentAppliance = '';
+            sessionToken = null;
+            isAuthenticated = false;
+            
+            // Reset UI
+            updateUserInfo();
+            updateConnectionStatus(false);
+            clearForms();
+            showPage('authPage');
+            showMessage('Logged out successfully', 'success');
+        }
+        
+        // Control functions using HTTP API
+        async function sendQuickCommand(command) {
+            if (!isAuthenticated) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/control`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionToken,
+                        command,
+                        room: 'all',
+                        appliance: 'all'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    addRecentCommand(data.message);
+                } else {
+                    showMessage(data.error || 'Command failed', 'error');
+                }
+            } catch (error) {
+                console.error('Command error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+        }
+        
+        async function sendRoomCommand(action) {
+            if (!currentRoom) return;
+            
+            if (!isAuthenticated) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/control`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionToken,
+                        command: action,
+                        room: currentRoom,
+                        appliance: 'all'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    addRecentCommand(data.message);
+                } else {
+                    showMessage(data.error || 'Command failed', 'error');
+                }
+            } catch (error) {
+                console.error('Command error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+        }
+        
+        async function sendDirectCommand(command) {
+            if (!isAuthenticated) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/control`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionToken,
+                        command,
+                        room: currentRoom,
+                        appliance: currentAppliance?.name || 'device'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    addRecentCommand(data.message);
+                    
+                    // Update device states if provided
+                    if (data.device_states) {
+                        updateDeviceStates(data.device_states);
+                    }
+                } else {
+                    showMessage(data.error || 'Command failed', 'error');
+                }
+            } catch (error) {
+                console.error('Command error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+        }
+        
+        async function getSystemStatus() {
+            if (!isAuthenticated) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_CONFIG.API_BASE}/api/status?sessionToken=${sessionToken}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displaySystemStatus(data.status);
+                } else {
+                    showMessage(data.error || 'Failed to get status', 'error');
+                }
+            } catch (error) {
+                console.error('Status error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+        }
+        
+        // Status and activity functions
+        function displaySystemStatus(status) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            const statusContent = document.getElementById('statusContent');
+            
+            if (!statusDisplay || !statusContent) return;
+            
+            let html = `
+                <div class="status-item">
+                    <span>System Status:</span>
+                    <span>${status.system}</span>
+                </div>
+                <div class="status-item">
+                    <span>Last Updated:</span>
+                    <span>${new Date(status.timestamp).toLocaleString()}</span>
+                </div>
+            `;
+            
+            Object.entries(status.devices).forEach(([device, state]) => {
+                html += `
+                    <div class="status-item">
+                        <span>Relay ${device.slice(1)}:</span>
+                        <span class="status-indicator ${state.toLowerCase() === 'on' ? 'status-on' : 'status-off'}"></span>
+                        <span>${state}</span>
+                    </div>
+                `;
+            });
+            
+            statusContent.innerHTML = html;
+            statusDisplay.style.display = 'block';
+        }
+        
+        function updateStatus(message) {
+            console.log('Status update:', message);
+        }
+        
+        function updateDeviceStatus(data) {
+            console.log('Device update:', data);
+        }
+        
+        function updateDeviceStates(deviceStates) {
+            // Update appliance status in the UI
+            Object.keys(appliances).forEach(roomId => {
+                appliances[roomId].forEach(appliance => {
+                    if (deviceStates[appliance.command]) {
+                        appliance.status = deviceStates[appliance.command];
+                    }
+                });
+            });
+            
+            // Refresh current room if displayed
+            if (currentRoom && document.getElementById('applianceList')) {
+                loadAppliances(currentRoom);
+            }
+        }
+        
+        function addRecentCommand(command) {
+            const recentEl = document.getElementById('recentCommands');
+            if (!recentEl) return;
+            
+            const commandDiv = document.createElement('div');
+            commandDiv.className = 'activity-item';
+            commandDiv.innerHTML = `
+                <span>${command}</span>
+                <span class="activity-time">${new Date().toLocaleTimeString()}</span>
+            `;
+            
+            // Add to top of list
+            recentEl.insertBefore(commandDiv, recentEl.firstChild);
+            
+            // Keep only last 5 commands
+            while (recentEl.children.length > 5) {
+                recentEl.removeChild(recentEl.lastChild);
+            }
+        }
+        
+        // Initialize the application
+        function initApp() {
+            console.log('Smart Home App initializing...');
+            
+            // Set initial connection status
+            updateConnectionStatus(false);
+            
+            // Add event listeners
+            setupEventListeners();
+            
+            console.log('Smart Home App initialized successfully');
+        }
+        
+        function setupEventListeners() {
+            // Handle Enter key in forms
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const activeElement = document.activeElement;
+                    
+                    if (activeElement.closest('#loginForm')) {
+                        e.preventDefault();
+                        handleLogin();
+                    } else if (activeElement.closest('#signupForm')) {
+                        e.preventDefault();
+                        handleSignup();
+                    }
+                }
+            });
+            
+            // Handle page visibility change
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && sessionToken && isAuthenticated) {
+                    // Refresh status when page becomes visible
+                    getSystemStatus();
+                }
+            });
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html> onclick="sendQuickCommand('ON')">
+                    <div class="control-icon">💡</div>
+                    <div>All Lights ON</div>
+                </div>
+                <div class="control-btn" onclick="sendQuickCommand('OFF')">
+                    <div class="control-icon">🌙</div>
+                    <div>All Lights OFF</div>
+                </div>
+                <div class="control-btn" onclick="sendQuickCommand('AUTO')">
+                    <div class="control-icon">🤖</div>
+                    <div>Auto Mode</div>
+                </div>
+                <div class="control-btn" onclick="getSystemStatus()">
+                    <div class="control-icon">📊</div>
+                    <div>Check Status</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Appliances Page -->
+        <div class="page" id="appliancesPage">
+            <button class="back-btn" onclick="goToRooms()" title="Back to Rooms">←</button>
+            
+            <div class="header">
+                <h1 id="roomTitle">Living Room</h1>
+                <p>Control individual appliances</p>
+            </div>
+            
+            <div class="appliance-list" id="applianceList">
+                <!-- Appliances will be loaded dynamically -->
+            </div>
+            
+            <div class="control-grid">
+                <div class="control-btn"

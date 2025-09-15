@@ -1,0 +1,36 @@
+{
+  "name": "smart-home-automation",
+  "version": "1.0.0",
+  "description": "Smart home automation system with web control panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "echo 'Build completed'"
+  },
+  "keywords": [
+    "home automation",
+    "smart home",
+    "iot",
+    "websocket",
+    "control panel"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/smart-home-automation"
+  }
+}
