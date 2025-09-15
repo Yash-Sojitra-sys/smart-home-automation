@@ -211,24 +211,53 @@ app.get('/api/arduino/status', (req, res) => {
   });
 });
 
-// Send command to Arduino
-app.post('/api/arduino/command', (req, res) => {
+// API endpoint to send commands to Arduino
+app.post('/api/command', (req, res) => {
   const { command } = req.body;
   
   if (!command) {
-    return res.status(400).json({
-      success: false,
-      message: 'Command is required'
-    });
+    return res.status(400).json({ error: 'Command is required' });
+  }
+
+  console.log(`🎮 Received command: ${command}`);
+  
+  // Ensure command has proper format for Arduino
+  let arduinoCommand = command;
+  if (command === 'R1ON' || command === 'R1OFF') {
+    arduinoCommand = command; // Keep as is
+  } else if (command === 'R2ON' || command === 'R2OFF') {
+    arduinoCommand = command; // Keep as is
+  } else if (command.includes('ON')) {
+    arduinoCommand = command;
+  } else if (command.includes('OFF')) {
+    arduinoCommand = command;
   }
   
-  const success = sendToArduino(command.toUpperCase());
-  
-  res.json({
-    success: success,
-    message: success ? 'Command sent to Arduino' : 'Arduino not connected',
-    command: command
-  });
+  if (serialPort && serialPort.isOpen) {
+    serialPort.write(arduinoCommand + '\n', (err) => {
+      if (err) {
+        console.error('❌ Error writing to Arduino:', err);
+        return res.status(500).json({ error: 'Failed to send command to Arduino' });
+      }
+      
+      console.log(`📤 Sent to Arduino: ${arduinoCommand}`);
+      
+      // Update device states based on command
+      // updateDeviceState(arduinoCommand);
+      
+      // Broadcast to all WebSocket clients
+      broadcastArduinoMessage(arduinoCommand);
+      
+      res.json({ 
+        success: true, 
+        command: arduinoCommand,
+        message: 'Command sent to Arduino successfully'
+      });
+    });
+  } else {
+    console.error('❌ Arduino not connected');
+    res.status(503).json({ error: 'Arduino not connected' });
+  }
 });
 
 // Control specific devices

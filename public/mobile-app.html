@@ -214,6 +214,24 @@
             background: #2ed573;
         }
 
+        .status-indicator.coming-soon {
+            background: #ffa502;
+        }
+
+        .appliance-item.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .coming-soon-badge {
+            background: #ffa502;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 10px;
+        }
+
         .back-btn {
             position: fixed;
             top: 20px;
@@ -449,36 +467,36 @@
                 name: 'Living Room',
                 icon: '🛋️',
                 appliances: [
-                    { id: 'living_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
-                    { id: 'living_fan', name: 'Ceiling Fan', icon: '🌪️', command: 'R2', status: false },
-                    { id: 'living_tv', name: 'TV', icon: '📺', command: 'TV', status: false },
-                    { id: 'living_ac', name: 'Air Conditioner', icon: '❄️', command: 'AC', status: false }
+                    { id: 'living_lights', name: 'Lights', icon: '💡', command: 'R1ON', status: false, functional: true },
+                    { id: 'living_fan', name: 'Ceiling Fan', icon: '🌪️', command: 'R2ON', status: false, functional: true },
+                    { id: 'living_tv', name: 'TV', icon: '📺', command: 'TV', status: false, functional: false },
+                    { id: 'living_ac', name: 'Air Conditioner', icon: '❄️', command: 'AC', status: false, functional: false }
                 ]
             },
             bedroom: {
                 name: 'Bedroom',
                 icon: '🛏️',
                 appliances: [
-                    { id: 'bedroom_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
-                    { id: 'bedroom_fan', name: 'Fan', icon: '🌪️', command: 'R2', status: false },
-                    { id: 'bedroom_lamp', name: 'Table Lamp', icon: '🕯️', command: 'LAMP', status: false }
+                    { id: 'bedroom_lights', name: 'Lights', icon: '💡', command: 'R1ON', status: false, functional: true },
+                    { id: 'bedroom_fan', name: 'Fan', icon: '🌪️', command: 'R2ON', status: false, functional: true },
+                    { id: 'bedroom_lamp', name: 'Table Lamp', icon: '🕯️', command: 'LAMP', status: false, functional: false }
                 ]
             },
             kitchen: {
                 name: 'Kitchen',
                 icon: '🍳',
                 appliances: [
-                    { id: 'kitchen_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
-                    { id: 'kitchen_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2', status: false },
-                    { id: 'kitchen_microwave', name: 'Microwave', icon: '📱', command: 'MW', status: false }
+                    { id: 'kitchen_lights', name: 'Lights', icon: '💡', command: 'R1ON', status: false, functional: true },
+                    { id: 'kitchen_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2ON', status: false, functional: true },
+                    { id: 'kitchen_microwave', name: 'Microwave', icon: '📱', command: 'MW', status: false, functional: false }
                 ]
             },
             bathroom: {
                 name: 'Bathroom',
                 icon: '🚿',
                 appliances: [
-                    { id: 'bathroom_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
-                    { id: 'bathroom_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2', status: false }
+                    { id: 'bathroom_lights', name: 'Lights', icon: '💡', command: 'R1ON', status: false, functional: true },
+                    { id: 'bathroom_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2ON', status: false, functional: true }
                 ]
             }
         };
@@ -675,18 +693,33 @@
 
             room.appliances.forEach(appliance => {
                 const applianceElement = document.createElement('div');
-                applianceElement.className = 'appliance-item';
-                applianceElement.onclick = () => selectAppliance(appliance);
+                applianceElement.className = appliance.functional ? 'appliance-item' : 'appliance-item disabled';
+                
+                if (appliance.functional) {
+                    applianceElement.onclick = () => selectAppliance(appliance);
+                } else {
+                    applianceElement.onclick = () => {
+                        alert('This appliance is coming soon! Currently only Lights and Fans are functional.');
+                    };
+                }
+                
+                const statusClass = appliance.functional ? 
+                    (appliance.status ? 'on' : '') : 
+                    'coming-soon';
+                
+                const statusText = appliance.functional ? 
+                    (appliance.status ? 'ON' : 'OFF') : 
+                    'Coming Soon';
                 
                 applianceElement.innerHTML = `
                     <div class="appliance-info">
                         <span class="appliance-icon">${appliance.icon}</span>
                         <div>
-                            <h3>${appliance.name}</h3>
-                            <p>${appliance.status ? 'ON' : 'OFF'}</p>
+                            <h3>${appliance.name}${!appliance.functional ? '<span class="coming-soon-badge">Coming Soon</span>' : ''}</h3>
+                            <p>${statusText}</p>
                         </div>
                     </div>
-                    <div class="status-indicator ${appliance.status ? 'on' : ''}"></div>
+                    <div class="status-indicator ${statusClass}"></div>
                 `;
                 
                 applianceList.appendChild(applianceElement);
@@ -797,21 +830,17 @@
         }
 
         function processVoiceCommand(transcript) {
-            const commands = {
-                'turn on': 'ON',
-                'turn off': 'OFF',
-                'switch on': 'ON',
-                'switch off': 'OFF',
-                'lights on': 'R1ON',
-                'lights off': 'R1OFF',
-                'fan on': 'R2ON',
-                'fan off': 'R2OFF'
-            };
-
-            for (const [phrase, command] of Object.entries(commands)) {
-                if (transcript.includes(phrase)) {
-                    return command;
-                }
+            if (!currentAppliance) return null;
+            
+            const isOnCommand = transcript.includes('turn on') || transcript.includes('switch on') || 
+                               transcript.includes('lights on') || transcript.includes('fan on');
+            const isOffCommand = transcript.includes('turn off') || transcript.includes('switch off') || 
+                                transcript.includes('lights off') || transcript.includes('fan off');
+            
+            if (isOnCommand) {
+                return currentAppliance.command.replace('ON', 'ON'); // Ensure ON suffix
+            } else if (isOffCommand) {
+                return currentAppliance.command.replace('ON', 'OFF'); // Replace with OFF suffix
             }
 
             return null;
