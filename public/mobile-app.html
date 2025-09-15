@@ -352,12 +352,13 @@
                 </div>
                 
                 <div class="voice-command-area">
-                    <p class="command-text">🎤 Record Your Voice for Authentication</p>
+                    <p class="command-text">🎤 Voice Authentication (Optional)</p>
                     <button class="voice-btn" id="voiceRegisterBtn" onclick="recordVoiceForRegistration()">🎤</button>
-                    <p id="voiceRegisterStatus">Tap to record your voice sample</p>
+                    <p id="voiceRegisterStatus">Tap to record voice sample (optional for enhanced security)</p>
                 </div>
 
-                <button class="btn btn-primary" onclick="signup()" id="signupBtn" disabled>Complete Registration</button>
+                <button class="btn btn-primary" onclick="signup()" id="signupBtn">Complete Registration</button>
+                <button class="btn btn-secondary" onclick="skipVoiceRegistration()" id="skipVoiceBtn">Skip Voice Registration</button>
                 <button class="btn btn-secondary" onclick="showLogin()">Back to Login</button>
             </div>
         </div>
@@ -417,7 +418,7 @@
 
             <div class="card">
                 <div class="voice-command-area">
-                    <p class="command-text">🎤 Say Your Command</p>
+                    <p class="command-text" id="voiceCommandText">🎤 Say Your Command</p>
                     <button class="voice-btn" id="voiceBtn" onclick="startVoiceCommand()">🎤</button>
                     <p id="voiceStatus">Tap to speak</p>
                     <div class="voice-feedback" id="voiceFeedback" style="display: none;">
@@ -580,7 +581,7 @@
                 
                 btn.classList.remove('recording');
                 status.textContent = `Voice recorded: "${transcript}"`;
-                document.getElementById('signupBtn').disabled = false;
+                document.getElementById('skipVoiceBtn').style.display = 'none';
             };
 
             recognition.onerror = function() {
@@ -591,27 +592,35 @@
             recognition.start();
         }
 
+        function skipVoiceRegistration() {
+            voiceRegistrationData = null;
+            document.getElementById('voiceRegisterStatus').textContent = 'Voice registration skipped - using password-only authentication';
+            document.getElementById('skipVoiceBtn').style.display = 'none';
+        }
+
         async function signup() {
             const name = document.getElementById('signupName').value;
             const email = document.getElementById('signupEmail').value;
             const password = document.getElementById('signupPassword').value;
 
-            if (!name || !email || !password || !voiceRegistrationData) {
-                alert('Please fill all fields and record your voice');
+            if (!name || !email || !password) {
+                alert('Please fill all required fields');
                 return;
             }
 
-            // Store user data with voice print
+            // Store user data with optional voice print
             const userData = {
                 name,
                 email,
                 password,
-                voicePrint: voiceRegistrationData,
+                voicePrint: voiceRegistrationData, // Can be null if skipped
+                hasVoiceAuth: voiceRegistrationData !== null,
                 createdAt: Date.now()
             };
 
             localStorage.setItem('user_' + email, JSON.stringify(userData));
-            alert('Registration successful! Please login.');
+            const authType = voiceRegistrationData ? 'voice + password' : 'password only';
+            alert(`Registration successful with ${authType} authentication! Please login.`);
             showLogin();
         }
 
@@ -697,6 +706,14 @@
                 toggle.classList.remove('active');
             }
             
+            // Update voice command text based on user's authentication type
+            const commandText = document.getElementById('voiceCommandText');
+            if (currentUser && currentUser.hasVoiceAuth) {
+                commandText.innerHTML = '🎤 Say Your Command (Voice Auth Enabled)';
+            } else {
+                commandText.innerHTML = '🎤 Say Your Command (Password Auth Only)';
+            }
+            
             showPage('voiceControlPage');
         }
 
@@ -718,10 +735,14 @@
                 const transcript = event.results[0][0].transcript.toLowerCase();
                 const confidence = event.results[0][0].confidence;
 
-                // Voice authentication check
+                // Voice authentication check (only for users with voice auth enabled)
                 if (!await authenticateVoice(transcript, confidence)) {
                     btn.classList.remove('recording');
-                    status.textContent = 'Voice authentication failed';
+                    if (currentUser && currentUser.hasVoiceAuth) {
+                        status.textContent = 'Voice authentication failed';
+                    } else {
+                        status.textContent = 'Authentication error';
+                    }
                     return;
                 }
 
@@ -751,8 +772,9 @@
         }
 
         async function authenticateVoice(transcript, confidence) {
-            if (!currentUser || !currentUser.voicePrint) {
-                return false;
+            // If user doesn't have voice authentication enabled, skip voice check
+            if (!currentUser || !currentUser.hasVoiceAuth || !currentUser.voicePrint) {
+                return true; // Allow command execution for password-only users
             }
 
             // Simple voice authentication based on transcript similarity
