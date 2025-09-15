@@ -297,6 +297,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Serve mobile app
+app.get('/mobile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'mobile-app.html'));
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log('🚀 Smart Home Serial Bridge Server Started');

@@ -6,7 +6,12 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Serve mobile app
+app.get('/mobile', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'mobile-app.html'));
+});
 
 // In-memory storage (use a database in production)
 const users = new Map();

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Voice Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .page {
+            display: none;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #2ed573;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .voice-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #ff4757;
+            border: none;
+            color: white;
+            font-size: 24px;
+            margin: 20px auto;
+            display: block;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .voice-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .voice-btn.recording {
+            background: #2ed573;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .room-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .room-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .appliance-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .appliance-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .appliance-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .appliance-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .appliance-icon {
+            font-size: 1.8rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .status-indicator.on {
+            background: #2ed573;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        #cameraFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        .voice-command-area {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .command-text {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .voice-feedback {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-style: italic;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #2ed573;
+        }
+
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::before {
+            transform: translateX(25px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" id="backBtn" onclick="goBack()" style="display: none;">←</button>
+
+        <!-- Page 1: Login/Signup -->
+        <div class="page active" id="loginPage">
+            <div class="header">
+                <h1>🏠 Smart Home</h1>
+                <p>Voice Controlled Home Automation</p>
+            </div>
+
+            <div class="card">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <button class="btn btn-primary" onclick="login()">Login</button>
+                <button class="btn btn-secondary" onclick="showSignup()">Sign Up</button>
+            </div>
+        </div>
+
+        <!-- Page 1b: Signup with Voice Registration -->
+        <div class="page" id="signupPage">
+            <div class="header">
+                <h1>📝 Sign Up</h1>
+                <p>Register with Voice Authentication</p>
+            </div>
+
+            <div class="card">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name">
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password">
+                </div>
+                
+                <div class="voice-command-area">
+                    <p class="command-text">🎤 Record Your Voice for Authentication</p>
+                    <button class="voice-btn" id="voiceRegisterBtn" onclick="recordVoiceForRegistration()">🎤</button>
+                    <p id="voiceRegisterStatus">Tap to record your voice sample</p>
+                </div>
+
+                <button class="btn btn-primary" onclick="signup()" id="signupBtn" disabled>Complete Registration</button>
+                <button class="btn btn-secondary" onclick="showLogin()">Back to Login</button>
+            </div>
+        </div>
+
+        <!-- Page 2: Rooms -->
+        <div class="page" id="roomsPage">
+            <div class="header">
+                <h1>🏠 Select Room</h1>
+                <p>Choose a room to control</p>
+            </div>
+
+            <div class="camera-container">
+                <video id="cameraFeed" autoplay muted></video>
+                <div class="camera-overlay">📹 Live Feed</div>
+            </div>
+
+            <div class="room-grid">
+                <div class="room-card" onclick="selectRoom('living')">
+                    <span class="room-icon">🛋️</span>
+                    <h3>Living Room</h3>
+                </div>
+                <div class="room-card" onclick="selectRoom('bedroom')">
+                    <span class="room-icon">🛏️</span>
+                    <h3>Bedroom</h3>
+                </div>
+                <div class="room-card" onclick="selectRoom('kitchen')">
+                    <span class="room-icon">🍳</span>
+                    <h3>Kitchen</h3>
+                </div>
+                <div class="room-card" onclick="selectRoom('bathroom')">
+                    <span class="room-icon">🚿</span>
+                    <h3>Bathroom</h3>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Page 3: Appliances -->
+        <div class="page" id="appliancesPage">
+            <div class="header">
+                <h1 id="roomTitle">🛋️ Living Room</h1>
+                <p>Control your appliances</p>
+            </div>
+
+            <div class="appliance-list" id="applianceList">
+                <!-- Appliances will be populated here -->
+            </div>
+        </div>
+
+        <!-- Page 4: Voice Control -->
+        <div class="page" id="voiceControlPage">
+            <div class="header">
+                <h1 id="applianceTitle">💡 Lights</h1>
+                <p>Voice Control Interface</p>
+            </div>
+
+            <div class="card">
+                <div class="voice-command-area">
+                    <p class="command-text">🎤 Say Your Command</p>
+                    <button class="voice-btn" id="voiceBtn" onclick="startVoiceCommand()">🎤</button>
+                    <p id="voiceStatus">Tap to speak</p>
+                    <div class="voice-feedback" id="voiceFeedback" style="display: none;">
+                        Command recognized: <span id="recognizedCommand"></span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <p>Manual Control:</p>
+                    <div class="toggle-switch" id="manualToggle" onclick="toggleAppliance()"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentRoom = null;
+        let currentAppliance = null;
+        let voiceRegistrationData = null;
+        let recognition = null;
+        let cameraStream = null;
+
+        // Room and appliance data
+        const roomData = {
+            living: {
+                name: 'Living Room',
+                icon: '🛋️',
+                appliances: [
+                    { id: 'living_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
+                    { id: 'living_fan', name: 'Ceiling Fan', icon: '🌪️', command: 'R2', status: false },
+                    { id: 'living_tv', name: 'TV', icon: '📺', command: 'TV', status: false },
+                    { id: 'living_ac', name: 'Air Conditioner', icon: '❄️', command: 'AC', status: false }
+                ]
+            },
+            bedroom: {
+                name: 'Bedroom',
+                icon: '🛏️',
+                appliances: [
+                    { id: 'bedroom_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
+                    { id: 'bedroom_fan', name: 'Fan', icon: '🌪️', command: 'R2', status: false },
+                    { id: 'bedroom_lamp', name: 'Table Lamp', icon: '🕯️', command: 'LAMP', status: false }
+                ]
+            },
+            kitchen: {
+                name: 'Kitchen',
+                icon: '🍳',
+                appliances: [
+                    { id: 'kitchen_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
+                    { id: 'kitchen_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2', status: false },
+                    { id: 'kitchen_microwave', name: 'Microwave', icon: '📱', command: 'MW', status: false }
+                ]
+            },
+            bathroom: {
+                name: 'Bathroom',
+                icon: '🚿',
+                appliances: [
+                    { id: 'bathroom_lights', name: 'Lights', icon: '💡', command: 'R1', status: false },
+                    { id: 'bathroom_exhaust', name: 'Exhaust Fan', icon: '🌪️', command: 'R2', status: false }
+                ]
+            }
+        };
+
+        // Initialize app
+        window.addEventListener('load', () => {
+            initializeVoiceRecognition();
+            initializeCamera();
+        });
+
+        // Voice recognition setup
+        function initializeVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+            }
+        }
+
+        // Camera setup
+        async function initializeCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
+                const videoElement = document.getElementById('cameraFeed');
+                if (videoElement) {
+                    videoElement.srcObject = cameraStream;
+                }
+            } catch (error) {
+                console.log('Camera access denied or not available');
+            }
+        }
+
+        // Page navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // Show/hide back button
+            const backBtn = document.getElementById('backBtn');
+            if (pageId === 'loginPage' || pageId === 'signupPage') {
+                backBtn.style.display = 'none';
+            } else {
+                backBtn.style.display = 'block';
+            }
+        }
+
+        function goBack() {
+            const currentPage = document.querySelector('.page.active').id;
+            
+            switch (currentPage) {
+                case 'signupPage':
+                    showLogin();
+                    break;
+                case 'roomsPage':
+                    logout();
+                    break;
+                case 'appliancesPage':
+                    showRooms();
+                    break;
+                case 'voiceControlPage':
+                    showAppliances(currentRoom);
+                    break;
+            }
+        }
+
+        // Authentication functions
+        function showSignup() {
+            showPage('signupPage');
+        }
+
+        function showLogin() {
+            showPage('loginPage');
+        }
+
+        async function recordVoiceForRegistration() {
+            const btn = document.getElementById('voiceRegisterBtn');
+            const status = document.getElementById('voiceRegisterStatus');
+            
+            if (!recognition) {
+                status.textContent = 'Voice recognition not supported';
+                return;
+            }
+
+            btn.classList.add('recording');
+            status.textContent = 'Recording... Say "Hello, this is my voice"';
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                voiceRegistrationData = {
+                    transcript: transcript.toLowerCase(),
+                    timestamp: Date.now(),
+                    confidence: event.results[0][0].confidence
+                };
+                
+                btn.classList.remove('recording');
+                status.textContent = `Voice recorded: "${transcript}"`;
+                document.getElementById('signupBtn').disabled = false;
+            };
+
+            recognition.onerror = function() {
+                btn.classList.remove('recording');
+                status.textContent = 'Recording failed. Try again.';
+            };
+
+            recognition.start();
+        }
+
+        async function signup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            if (!name || !email || !password || !voiceRegistrationData) {
+                alert('Please fill all fields and record your voice');
+                return;
+            }
+
+            // Store user data with voice print
+            const userData = {
+                name,
+                email,
+                password,
+                voicePrint: voiceRegistrationData,
+                createdAt: Date.now()
+            };
+
+            localStorage.setItem('user_' + email, JSON.stringify(userData));
+            alert('Registration successful! Please login.');
+            showLogin();
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+
+            const userData = localStorage.getItem('user_' + email);
+            if (!userData) {
+                alert('User not found. Please sign up first.');
+                return;
+            }
+
+            const user = JSON.parse(userData);
+            if (user.password !== password) {
+                alert('Invalid password');
+                return;
+            }
+
+            currentUser = user;
+            showRooms();
+        }
+
+        function logout() {
+            currentUser = null;
+            currentRoom = null;
+            currentAppliance = null;
+            showLogin();
+        }
+
+        // Room and appliance functions
+        function showRooms() {
+            showPage('roomsPage');
+        }
+
+        function selectRoom(roomId) {
+            currentRoom = roomId;
+            showAppliances(roomId);
+        }
+
+        function showAppliances(roomId) {
+            const room = roomData[roomId];
+            document.getElementById('roomTitle').innerHTML = `${room.icon} ${room.name}`;
+            
+            const applianceList = document.getElementById('applianceList');
+            applianceList.innerHTML = '';
+
+            room.appliances.forEach(appliance => {
+                const applianceElement = document.createElement('div');
+                applianceElement.className = 'appliance-item';
+                applianceElement.onclick = () => selectAppliance(appliance);
+                
+                applianceElement.innerHTML = `
+                    <div class="appliance-info">
+                        <span class="appliance-icon">${appliance.icon}</span>
+                        <div>
+                            <h3>${appliance.name}</h3>
+                            <p>${appliance.status ? 'ON' : 'OFF'}</p>
+                        </div>
+                    </div>
+                    <div class="status-indicator ${appliance.status ? 'on' : ''}"></div>
+                `;
+                
+                applianceList.appendChild(applianceElement);
+            });
+
+            showPage('appliancesPage');
+        }
+
+        function selectAppliance(appliance) {
+            currentAppliance = appliance;
+            document.getElementById('applianceTitle').innerHTML = `${appliance.icon} ${appliance.name}`;
+            
+            const toggle = document.getElementById('manualToggle');
+            if (appliance.status) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            
+            showPage('voiceControlPage');
+        }
+
+        // Voice control functions
+        async function startVoiceCommand() {
+            if (!recognition) {
+                alert('Voice recognition not supported');
+                return;
+            }
+
+            const btn = document.getElementById('voiceBtn');
+            const status = document.getElementById('voiceStatus');
+            const feedback = document.getElementById('voiceFeedback');
+
+            btn.classList.add('recording');
+            status.textContent = 'Listening...';
+
+            recognition.onresult = async function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                const confidence = event.results[0][0].confidence;
+
+                // Voice authentication check
+                if (!await authenticateVoice(transcript, confidence)) {
+                    btn.classList.remove('recording');
+                    status.textContent = 'Voice authentication failed';
+                    return;
+                }
+
+                // Process command
+                const command = processVoiceCommand(transcript);
+                if (command) {
+                    document.getElementById('recognizedCommand').textContent = transcript;
+                    feedback.style.display = 'block';
+                    
+                    // Send command to Arduino
+                    await sendArduinoCommand(command);
+                    
+                    // Update UI
+                    updateApplianceStatus(command);
+                }
+
+                btn.classList.remove('recording');
+                status.textContent = 'Command executed';
+            };
+
+            recognition.onerror = function() {
+                btn.classList.remove('recording');
+                status.textContent = 'Voice recognition failed';
+            };
+
+            recognition.start();
+        }
+
+        async function authenticateVoice(transcript, confidence) {
+            if (!currentUser || !currentUser.voicePrint) {
+                return false;
+            }
+
+            // Simple voice authentication based on transcript similarity
+            const registeredVoice = currentUser.voicePrint.transcript;
+            const similarity = calculateSimilarity(transcript, registeredVoice);
+            
+            return similarity > 0.3 && confidence > 0.5;
+        }
+
+        function calculateSimilarity(str1, str2) {
+            const words1 = str1.split(' ');
+            const words2 = str2.split(' ');
+            let matches = 0;
+            
+            words1.forEach(word => {
+                if (words2.includes(word)) matches++;
+            });
+            
+            return matches / Math.max(words1.length, words2.length);
+        }
+
+        function processVoiceCommand(transcript) {
+            const commands = {
+                'turn on': 'ON',
+                'turn off': 'OFF',
+                'switch on': 'ON',
+                'switch off': 'OFF',
+                'lights on': 'R1ON',
+                'lights off': 'R1OFF',
+                'fan on': 'R2ON',
+                'fan off': 'R2OFF'
+            };
+
+            for (const [phrase, command] of Object.entries(commands)) {
+                if (transcript.includes(phrase)) {
+                    return command;
+                }
+            }
+
+            return null;
+        }
+
+        async function sendArduinoCommand(command) {
+            try {
+                // For Vercel deployment, use the API endpoint
+                const response = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        command: command,
+                        token: currentUser ? currentUser.sessionToken : null
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('Command sent:', result);
+                return result;
+            } catch (error) {
+                console.error('Failed to send command:', error);
+                // Fallback for local development
+                try {
+                    const localResponse = await fetch('http://localhost:3001/api/command', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ command })
+                    });
+                    return await localResponse.json();
+                } catch (localError) {
+                    console.error('Local fallback failed:', localError);
+                }
+            }
+        }
+
+        function updateApplianceStatus(command) {
+            if (!currentAppliance) return;
+
+            if (command.includes('ON')) {
+                currentAppliance.status = true;
+            } else if (command.includes('OFF')) {
+                currentAppliance.status = false;
+            }
+
+            const toggle = document.getElementById('manualToggle');
+            if (currentAppliance.status) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
+        function toggleAppliance() {
+            if (!currentAppliance) return;
+
+            const newStatus = !currentAppliance.status;
+            const command = newStatus ? 
+                (currentAppliance.command + 'ON') : 
+                (currentAppliance.command + 'OFF');
+
+            sendArduinoCommand(command);
+            updateApplianceStatus(command);
+        }
+    </script>
+</body>
+</html>

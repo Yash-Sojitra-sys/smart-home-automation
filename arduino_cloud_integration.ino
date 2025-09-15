@@ -20,11 +20,11 @@
 #include <ArduinoJson.h>
 
 // WiFi credentials - UPDATE THESE WITH YOUR WIFI DETAILS
-const char* ssid = "YOUR_WIFI_SSID";           // Replace with your WiFi network name
-const char* password = "YOUR_WIFI_PASSWORD";   // Replace with your WiFi password
+const char* ssid = "iPhone";                   // Your WiFi network name
+const char* password = "12345678";             // Your WiFi password
 
-// Server URL - UPDATE THIS WITH YOUR DEPLOYED VERCEL URL
-const char* serverURL = "https://smart-home-automation-xyz.vercel.app";  // Replace xyz with your actual deployment URL
+// Server URL - Your deployed Vercel URL
+const char* serverURL = "https://smart-home-automation-mu.vercel.app";
 
 // Pin definitions
 const int PIR_PIN = 13;        // PIR sensor output pin
