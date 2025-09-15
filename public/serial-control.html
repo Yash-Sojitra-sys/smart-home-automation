@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Control - Serial Bridge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .status-indicator.connected {
+            background: #2ed573;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+        }
+
+        .control-card h3 {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+
+        .device-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .device-icon {
+            font-size: 1.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #ccc;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #2ed573;
+        }
+
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::before {
+            transform: translateX(30px);
+        }
+
+        .mode-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-btn.active {
+            background: #2ed573;
+        }
+
+        .console {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .emergency-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .emergency-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .emergency-btn.on {
+            background: #2ed573;
+            color: white;
+        }
+
+        .emergency-btn.off {
+            background: #ff4757;
+            color: white;
+        }
+
+        .emergency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .emergency-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Smart Home Control Panel</h1>
+            <p>Arduino UNO Serial Bridge - COM Port 9</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="arduinoStatus"></div>
+                <span>Arduino: <span id="arduinoStatusText">Disconnected</span></span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator" id="websocketStatus"></div>
+                <span>WebSocket: <span id="websocketStatusText">Disconnected</span></span>
+            </div>
+            <div class="status-item">
+                <span>Mode: <span id="currentMode">MANUAL ONLY</span></span>
+            </div>
+        </div>
+
+        <div class="control-grid">
+            <div class="control-card">
+                <h3>💡 Device Controls</h3>
+                <div class="device-controls">
+                    <div class="device-item">
+                        <div class="device-info">
+                            <span class="device-icon">💡</span>
+                            <span>Lights (Relay 1)</span>
+                        </div>
+                        <div class="toggle-switch" id="relay1Toggle" onclick="toggleDevice('relay1')"></div>
+                    </div>
+                    <div class="device-item">
+                        <div class="device-info">
+                            <span class="device-icon">🌪️</span>
+                            <span>Fans (Relay 2)</span>
+                        </div>
+                        <div class="toggle-switch" id="relay2Toggle" onclick="toggleDevice('relay2')"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>⚙️ System Info</h3>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">🔧</div>
+                    <h4>Manual Control Only</h4>
+                    <p style="opacity: 0.8; margin-top: 10px;">
+                        All relays are controlled exclusively through<br>
+                        the web interface or serial commands
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h3>📟 Arduino Console</h3>
+            <div class="console" id="console">
+                <div class="console-line">
+                    <span class="timestamp">[System]</span> Connecting to Arduino...
+                </div>
+            </div>
+        </div>
+
+        <div class="control-card">
+            <h3>🚨 Emergency Controls</h3>
+            <div class="emergency-controls">
+                <button class="emergency-btn on" onclick="emergencyControl('ON')">
+                    🔛 ALL ON
+                </button>
+                <button class="emergency-btn off" onclick="emergencyControl('OFF')">
+                    ⏹️ ALL OFF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let deviceStates = {
+            relay1: false,
+            relay2: false,
+            mode: 'MANUAL',
+            connected: false
+        };
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8081');
+                
+                ws.onopen = function() {
+                    console.log('WebSocket connected');
+                    updateWebSocketStatus(true);
+                    addConsoleMessage('WebSocket connected to serial bridge');
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'status') {
+                        updateDeviceStates(data.data);
+                    } else if (data.type === 'arduino_message') {
+                        addConsoleMessage(data.data, 'Arduino');
+                    }
+                };
+                
+                ws.onclose = function() {
+                    console.log('WebSocket disconnected');
+                    updateWebSocketStatus(false);
+                    addConsoleMessage('WebSocket disconnected. Attempting to reconnect...', 'System');
+                    
+                    // Attempt to reconnect after 3 seconds
+                    setTimeout(initWebSocket, 3000);
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    addConsoleMessage('WebSocket error occurred', 'Error');
+                };
+                
+            } catch (error) {
+                console.error('Failed to create WebSocket:', error);
+                addConsoleMessage('Failed to connect to serial bridge', 'Error');
+                setTimeout(initWebSocket, 3000);
+            }
+        }
+
+        // Send command to Arduino via WebSocket
+        function sendArduinoCommand(command) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'arduino_command',
+                    command: command
+                }));
+                addConsoleMessage(`Command sent: ${command}`, 'Web');
+            } else {
+                addConsoleMessage('Cannot send command - WebSocket not connected', 'Error');
+            }
+        }
+
+        // Update device states from Arduino
+        function updateDeviceStates(states) {
+            deviceStates = { ...deviceStates, ...states };
+            
+            // Update UI elements
+            updateToggleSwitch('relay1Toggle', deviceStates.relay1);
+            updateToggleSwitch('relay2Toggle', deviceStates.relay2);
+            
+            document.getElementById('currentMode').textContent = 'MANUAL ONLY';
+            
+            updateArduinoStatus(deviceStates.connected);
+        }
+
+        // Update toggle switch appearance
+        function updateToggleSwitch(elementId, isActive) {
+            const toggle = document.getElementById(elementId);
+            if (isActive) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
+        // Update Arduino connection status
+        function updateArduinoStatus(connected) {
+            const indicator = document.getElementById('arduinoStatus');
+            const text = document.getElementById('arduinoStatusText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'Connected (COM9)';
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Update WebSocket connection status
+        function updateWebSocketStatus(connected) {
+            const indicator = document.getElementById('websocketStatus');
+            const text = document.getElementById('websocketStatusText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Add message to console
+        function addConsoleMessage(message, source = 'System') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.innerHTML = `<span class="timestamp">[${timestamp}] [${source}]</span> ${message}`;
+            
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+            
+            // Keep only last 100 messages
+            while (console.children.length > 100) {
+                console.removeChild(console.firstChild);
+            }
+        }
+
+        // Toggle device (relay)
+        function toggleDevice(device) {
+            let command;
+            
+            if (device === 'relay1') {
+                command = deviceStates.relay1 ? 'R1OFF' : 'R1ON';
+            } else if (device === 'relay2') {
+                command = deviceStates.relay2 ? 'R2OFF' : 'R2ON';
+            }
+            
+            sendArduinoCommand(command);
+        }
+
+        // Set system mode (removed - manual only)
+        function setMode(mode) {
+            // System is manual only - no mode switching available
+        }
+
+        // Emergency controls
+        function emergencyControl(action) {
+            sendArduinoCommand(action);
+        }
+
+        // Request status update
+        function requestStatus() {
+            sendArduinoCommand('STATUS');
+        }
+
+        // Initialize the application
+        function init() {
+            addConsoleMessage('Smart Home Control Panel initialized');
+            addConsoleMessage('Connecting to serial bridge server...');
+            initWebSocket();
+            
+            // Request status every 10 seconds
+            setInterval(requestStatus, 10000);
+        }
+
+        // Start the application when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
